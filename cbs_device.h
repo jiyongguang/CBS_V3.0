@@ -1,6 +1,8 @@
 #ifndef CBS_DEVICE_H
 #define CBS_DEVICE_H
 
+#include <string>
+
 #include "cbs_types.h"
 #include "cbs_util.h"
 #include "cbs_timer.h"
@@ -26,11 +28,16 @@
 class CDevice
 {
 public:
-	CDevice():_total_cmd(0),_sequence(0),_waitings(0),_pendings(0),_last_started(0)
+	CDevice(uint32 class_id, uint32 device_no, uint16 max_pending, const char* name):_total_cmd(0),_sequence(0),_waitings(0),_pendings(0),_last_started(0)
 	{
 		qu_QueueInit(&_cbufs, CBUF_DEVICE_Q_HEAD);
 		qu_QueueInit(&_cbufs_pending, CBUF_DEVICE_PENDING_Q_HEAD);
 		spin_lock_init(&_q_lock);
+
+        _class_id = class_id;
+        _index = device_no;
+        _max_pending = max_pending;
+        _name.assgin(name);
 	}
 	virtual ~CDevice(){}
 	
@@ -50,9 +57,25 @@ public:
 	time_t _last_started;
 
     scsi_sense_info_t _latest_sense;
+
+    std::string _name;
+    uint32 _state;
+    uint16 _max_pending;
 public:
     virtual void cmd_done(cbs_buf_t* p_cbuf);
+    inline void clear_sense_info()
+    {
+        memset(&_latest_sense, 0, sizeof(scsi_sense_info_t));
+    }
+
 };
+
+#define CBS_DEVICE_FREE                 0x00000000
+#define CBS_DEVICE_STOP                 0x00000001
+#define CBS_DEVICE_GONE                 0x00000002
+#define CBS_DEVICE_ABORT                0x00000004
+#define CBS_DEVICE_ALLOCED              0x00000008
+#define CBS_DEVICE_CHECK                0x00000010
 
 class CDevicePool
 {
@@ -71,6 +94,8 @@ private:
 
 public:
     CDevice* _get_device_by_index(uint32 index);
+    RT_STATUS _device_register(CDevice* p_dev);
+    void _device_unregister(CDevice *p_dev);
 };
 
 extern CDevice* get_device_by_index(uint32 index);

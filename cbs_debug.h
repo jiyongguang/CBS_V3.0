@@ -24,6 +24,7 @@
 #define CBS_DEBUG_HB            0x00000020
 #define CBS_DEBUG_TARGET		0x00000040
 #define CBS_DEBUG_CBUF          0x00000080
+#define CBS_DEBUG_DEV           0x00000100
 
 #define CBS_DEBUG_LEVEL         0x00000000
 
